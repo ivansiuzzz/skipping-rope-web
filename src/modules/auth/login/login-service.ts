@@ -4,7 +4,7 @@ import type { LoginRequest, LoginResponse } from "./login-type";
 
 export const authApi = {
   login: (data: LoginRequest) =>
-    apiClient.post<ApiResponse<LoginResponse>>("/auth/login", data),
+    apiClient.post<LoginResponse>("/auth/login", data),
 
   logout: () => apiClient.post<ApiResponse<void>>("/auth/logout"),
 };

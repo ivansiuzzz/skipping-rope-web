@@ -1,7 +1,8 @@
-// src/App.jsx
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { Toaster } from "react-hot-toast";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { LoginPage } from "./modules/auth/login/login-page";
+import { useAuthStore } from "./modules/auth/auth-store";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -13,11 +14,36 @@ const queryClient = new QueryClient({
   },
 });
 
+const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated } = useAuthStore();
+  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />;
+};
+
+const HomePage = () => (
+  <div style={{ padding: "2rem", textAlign: "center" }}>
+    <h1>歡迎使用跳繩應用!</h1>
+    <p>您已成功登入</p>
+  </div>
+);
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Toaster position="top-right" />
-      <ReactQueryDevtools initialIsOpen={false} />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/login" element={<LoginPage />} />
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <HomePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+        <Toaster position="top-right" />
+      </BrowserRouter>
     </QueryClientProvider>
   );
 }
