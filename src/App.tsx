@@ -20,9 +20,9 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 const HomePage = () => (
-  <div style={{ padding: "2rem", textAlign: "center" }}>
-    <h1>歡迎使用跳繩應用!</h1>
-    <p>您已成功登入</p>
+  <div>
+    <h1>歡迎使用跳繩應用! 🏃‍♂️</h1>
+    <p>您已成功登入，開始您的健康之旅吧！</p>
   </div>
 );
 
