@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Layout, Menu, Button } from "antd";
+import { Layout, Menu, Button, Dropdown } from "antd";
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -7,9 +7,12 @@ import {
   SettingOutlined,
   TrophyOutlined,
   BarChartOutlined,
+  UserOutlined,
+  LogoutOutlined,
 } from "@ant-design/icons";
 import { createUseStyles } from "react-jss";
 import { useLocation } from "react-router-dom";
+import { useLogout } from "../../modules/auth/login/hooks/useLogout";
 
 const { Header, Sider, Content } = Layout;
 
@@ -33,6 +36,12 @@ const useStyles = createUseStyles({
     alignItems: "center",
     gap: "16px",
     flex: 1,
+  },
+
+  headerRight: {
+    marginLeft: "auto",
+    display: "flex",
+    alignItems: "center",
   },
 
   logo: {
@@ -95,6 +104,16 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   const classes = useStyles();
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const { mutate: logout } = useLogout();
+
+  const userMenuItems = [
+    {
+      key: "logout",
+      icon: <LogoutOutlined />,
+      label: "登出",
+      onClick: () => logout(),
+    },
+  ];
 
   const menuItems = [
     {
@@ -133,6 +152,15 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
             <TrophyOutlined />
             跳繩競賽
           </div>
+        </div>
+        <div className={classes.headerRight}>
+          <Dropdown
+            menu={{ items: userMenuItems }}
+            placement="bottomRight"
+            arrow
+          >
+            <Button type="text" icon={<UserOutlined />} size="large" />
+          </Dropdown>
         </div>
       </Header>
 
