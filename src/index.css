@@ -6,6 +6,21 @@
   box-sizing: border-box;
 }
 
+/* Notification icon circle for Ant Design notifications */
+.notification-icon {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+}
+
+/* Slightly prevent text from wrapping in the message */
+.ant-notification-notice-description {
+  white-space: normal;
+}
+
 html,
 body,
 #root {

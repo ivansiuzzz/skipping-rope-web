@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import toast from "react-hot-toast";
+import { notificationService } from "../../../../app/components/Notification/notificationService";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../auth-store";
 import { authApi } from "../login-service";
@@ -14,12 +14,12 @@ export const useLogin = () => {
     onSuccess: (response) => {
       const { user, accessToken, refreshToken } = response.data;
       login(user, accessToken, refreshToken);
-      toast.success("login successful");
+      notificationService.success("登入成功", "歡迎回來！");
       navigate("/", { replace: true });
     },
     onError: (error: Error) => {
       console.error("Login error:", error);
-      toast.error("login failed");
+      notificationService.error("登入失敗", "請稍後再試或確認帳密");
     },
   });
 };

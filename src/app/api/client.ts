@@ -1,6 +1,6 @@
 // src/api/client.ts
 import axios, { AxiosError, type InternalAxiosRequestConfig } from "axios";
-import toast from "react-hot-toast";
+import { notificationService } from "../components/Notification/notificationService";
 
 export const apiClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL,
@@ -29,24 +29,27 @@ apiClient.interceptors.response.use(
     if (error.response) {
       switch (error.response.status) {
         case 401:
-          toast.error("Please log in again");
+          notificationService.error("請重新登入", "請重新登入以繼續使用");
           localStorage.removeItem("token");
           window.location.href = "/login";
           break;
         case 403:
-          toast.error("No permission");
+          notificationService.error("沒有權限", "您沒有此操作的權限");
           break;
         case 404:
-          toast.error("Resource not found");
+          notificationService.error("找不到資源", "請稍後再試或聯絡管理員");
           break;
         case 500:
-          toast.error("Server error");
+          notificationService.error("伺服器錯誤", "請稍後再試或聯絡管理員");
           break;
         default:
-          toast.error(error.response.data?.message || "An error occurred");
+          notificationService.error(
+            "錯誤",
+            error.response.data?.message || "發生了錯誤"
+          );
       }
     } else if (error.request) {
-      toast.error("Network error, please check your connection");
+      notificationService.error("網路錯誤", "請檢查您的網路連線");
     }
     return Promise.reject(error);
   }

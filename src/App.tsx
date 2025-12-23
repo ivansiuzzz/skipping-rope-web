@@ -1,5 +1,4 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Toaster } from "react-hot-toast";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LoginPage } from "./modules/auth/login/login-page";
 import { ProtectedRoute } from "./app/components/ProtectedRoute";
@@ -34,7 +33,6 @@ function App() {
           />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
-        <Toaster position="top-right" />
       </BrowserRouter>
     </QueryClientProvider>
   );

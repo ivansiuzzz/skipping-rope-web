@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../auth-store";
 import { authApi } from "../login-service";
 import { useMutation } from "@tanstack/react-query";
-import { toast } from "react-hot-toast/headless";
+import { notificationService } from "../../../../app/components/Notification/notificationService";
 
 export const useLogout = () => {
   const navigate = useNavigate();
@@ -12,12 +12,12 @@ export const useLogout = () => {
     mutationFn: () => authApi.logout(),
     onSuccess: () => {
       logout();
-      toast.success("logout successful");
+      notificationService.success("登出成功", "您已安全登出");
       navigate("/login", { replace: true });
     },
     onError: (error: Error) => {
       console.error(error);
-      toast.error("logout failed, please try again");
+      notificationService.error("登出失敗", "請稍後再試");
     },
   });
 };
