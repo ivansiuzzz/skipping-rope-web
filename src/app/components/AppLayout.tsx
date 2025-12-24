@@ -19,6 +19,7 @@ const { Header, Sider, Content } = Layout;
 const useStyles = createUseStyles({
   layout: {
     minHeight: "100vh",
+    background: "#ffffff",
   },
 
   header: {
@@ -29,6 +30,7 @@ const useStyles = createUseStyles({
     top: 0,
     zIndex: 1000,
     height: "65px",
+    borderBottom: "1px solid #f0f0f0",
   },
 
   headerLeft: {
@@ -61,12 +63,13 @@ const useStyles = createUseStyles({
   },
 
   sider: {
-    background: "#ffffff",
-    boxShadow: "2px 0 8px rgba(0, 0, 0, 0.06)",
+    background: "#fafafa",
+    borderRight: "1px solid #f0f0f0",
   },
 
   menu: {
     border: "none",
+    background: "transparent",
     "& .ant-menu-item": {
       margin: "4px 8px",
       borderRadius: "8px",
@@ -93,6 +96,8 @@ const useStyles = createUseStyles({
 
   content: {
     background: "#ffffff",
+    padding: "24px",
+    minHeight: "calc(100vh - 65px)",
   },
 });
 

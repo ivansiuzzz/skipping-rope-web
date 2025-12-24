@@ -34,3 +34,21 @@ body,
   color: #1a1a1a;
   line-height: 1.5;
 }
+
+/* Ant Design Layout overrides */
+.ant-layout {
+  background: #ffffff;
+}
+
+.ant-layout-sider {
+  background: #fafafa;
+}
+
+.ant-layout-content {
+  background: #ffffff;
+}
+
+.ant-menu-inline {
+  background: transparent;
+  border-right: none;
+}

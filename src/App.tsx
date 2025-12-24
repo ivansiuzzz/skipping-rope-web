@@ -4,6 +4,7 @@ import { LoginPage } from "./modules/auth/login/login-page";
 import { ProtectedRoute } from "./app/components/ProtectedRoute";
 import { AppLayout } from "./app/components/AppLayout";
 import { HomePage } from "./pages/HomePage";
+import AddEventPage from "./modules/add-event/AddEventPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -27,6 +28,16 @@ function App() {
               <ProtectedRoute>
                 <AppLayout>
                   <HomePage />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/add-event"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <AddEventPage />
                 </AppLayout>
               </ProtectedRoute>
             }
