@@ -13,8 +13,12 @@ export const useLogin = () => {
     mutationFn: (data: LoginRequest) => authApi.login(data),
     onSuccess: (response) => {
       const { user, accessToken, refreshToken } = response.data;
+      try {
+        localStorage.setItem("token", accessToken);
+      } catch (e: unknown) {
+        console.error("Failed to set token in localStorage", e);
+      }
       login(user, accessToken, refreshToken);
-      notificationService.success("登入成功", "歡迎回來！");
       navigate("/", { replace: true });
     },
     onError: (error: Error) => {

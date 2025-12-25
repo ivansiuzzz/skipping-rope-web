@@ -30,6 +30,11 @@ export const useAuthStore = create<AuthStore>()(
       ...initialState,
 
       login: (user, accessToken, refreshToken) => {
+        try {
+          if (accessToken) localStorage.setItem("token", accessToken);
+        } catch (e: unknown) {
+          console.error("Failed to set token in localStorage", e);
+        }
         set({
           user,
           accessToken,
@@ -39,10 +44,21 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       logout: () => {
+        try {
+          localStorage.removeItem("token");
+        } catch (e: unknown) {
+          console.error("Failed to remove token from localStorage", e);
+        }
         set(initialState);
       },
 
       setTokens: (accessToken, refreshToken) => {
+        try {
+          if (accessToken) localStorage.setItem("token", accessToken);
+          else localStorage.removeItem("token");
+        } catch (e: unknown) {
+          console.error("Failed to set token in localStorage", e);
+        }
         set({ accessToken, refreshToken });
       },
     }),

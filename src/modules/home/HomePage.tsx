@@ -9,7 +9,6 @@ const useStyles = createUseStyles({
   container: {
     textAlign: "center",
   },
-
   title: {
     fontSize: "2.5rem",
     fontWeight: 700,
@@ -17,21 +16,18 @@ const useStyles = createUseStyles({
     color: "#1a1a1a",
     letterSpacing: "-0.02em",
   },
-
   subtitle: {
     fontSize: "1.2rem",
     color: "#666",
     fontWeight: 400,
     marginBottom: "2rem",
   },
-
   features: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
     gap: "1.5rem",
     marginTop: "3rem",
   },
-
   featureCard: {
     padding: "1.5rem",
     borderRadius: "12px",
@@ -45,20 +41,17 @@ const useStyles = createUseStyles({
       boxShadow: "0 8px 25px rgba(0, 120, 212, 0.15)",
     },
   },
-
   featureIcon: {
     fontSize: "2rem",
     color: "#0078d4",
     marginBottom: "1rem",
   },
-
   featureTitle: {
     fontSize: "1.2rem",
     fontWeight: 600,
     color: "#1a1a1a",
     marginBottom: "0.5rem",
   },
-
   featureDesc: {
     color: "#666",
     fontSize: "0.9rem",

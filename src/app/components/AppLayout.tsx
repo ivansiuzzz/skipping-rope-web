@@ -9,9 +9,10 @@ import {
   BarChartOutlined,
   UserOutlined,
   LogoutOutlined,
+  CalendarOutlined,
 } from "@ant-design/icons";
 import { createUseStyles } from "react-jss";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useLogout } from "../../modules/auth/login/hooks/useLogout";
 
 const { Header, Sider, Content } = Layout;
@@ -54,6 +55,7 @@ const useStyles = createUseStyles({
     alignItems: "center",
     gap: "8px",
     marginLeft: "8px",
+    cursor: "pointer",
   },
 
   trigger: {
@@ -109,6 +111,7 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   const classes = useStyles();
   const [collapsed, setCollapsed] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { mutate: logout } = useLogout();
 
   const userMenuItems = [
@@ -125,6 +128,11 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
       key: "/",
       icon: <HomeOutlined />,
       label: "首頁",
+    },
+    {
+      key: "/events",
+      icon: <CalendarOutlined />,
+      label: "賽事",
     },
     {
       key: "/training",
@@ -183,6 +191,9 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
             selectedKeys={[location.pathname]}
             className={classes.menu}
             items={menuItems}
+            onClick={({ key }) => {
+              navigate(key);
+            }}
           />
         </Sider>
 

@@ -3,8 +3,9 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { LoginPage } from "./modules/auth/login/login-page";
 import { ProtectedRoute } from "./app/components/ProtectedRoute";
 import { AppLayout } from "./app/components/AppLayout";
-import { HomePage } from "./pages/HomePage";
+import { HomePage } from "./modules/home/HomePage";
 import AddEventPage from "./modules/add-event/AddEventPage";
+import EventListingPage from "./modules/event/EventListingPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +39,16 @@ function App() {
               <ProtectedRoute>
                 <AppLayout>
                   <AddEventPage />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <EventListingPage />
                 </AppLayout>
               </ProtectedRoute>
             }
