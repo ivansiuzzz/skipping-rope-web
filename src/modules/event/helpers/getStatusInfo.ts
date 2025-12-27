@@ -1,4 +1,4 @@
-import type { EventStatus } from "../event-service";
+import type { EventStatus } from "../event.service";
 
 export const getStatusInfo = (eventStatus: EventStatus = "draft") => {
   switch (eventStatus) {

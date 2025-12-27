@@ -1,4 +1,5 @@
 import { apiClient } from "../../app/api/client";
+import type { AddEventDto } from "../add-event/add-event.type";
 
 export interface EventSummary {
   createdAt: string;
@@ -27,6 +28,11 @@ export const EventStatus = {
 
 export type EventStatus = (typeof EventStatus)[keyof typeof EventStatus];
 
-export const eventApi = {
-  getEvents: () => apiClient.get<EventSummary[]>("/events/event-list"),
+export const eventListingApi = {
+  getEvents: () => apiClient.get<EventSummary[]>("/event/event-list"),
+};
+
+export const addEventApi = {
+  addEvent: (addEventDto: AddEventDto) =>
+    apiClient.post<AddEventDto>("event/create-events", addEventDto),
 };

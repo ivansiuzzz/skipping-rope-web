@@ -8,6 +8,8 @@ import { createUseStyles } from "react-jss";
 import { useEvents } from "./hooks/useEvents";
 import { getStatusInfo } from "./helpers/getStatusInfo";
 import { formatDateRange } from "./helpers/formatDateRange";
+import { Header } from "../../app/components/Header/Header";
+import { useNavigate } from "react-router-dom";
 
 const { Title, Text } = Typography;
 
@@ -143,15 +145,18 @@ const useStyles = createUseStyles({
 const EventListingPage = () => {
   const classes = useStyles();
   const { data: events, isLoading } = useEvents();
-
-  console.log({ events });
+  const navigate = useNavigate();
 
   return (
     <Spin spinning={isLoading}>
       <div className={classes.pageContainer}>
-        <div className={classes.pageHeader}>
-          <Title className={classes.pageTitle}>賽事管理</Title>
-        </div>
+        <Header
+          title="賽事管理"
+          buttonText="+ 新增賽事"
+          onButtonClick={() => {
+            navigate("/add-event");
+          }}
+        />
 
         <div className={classes.eventsGrid}>
           {events?.map((event) => {

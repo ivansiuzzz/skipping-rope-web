@@ -1,6 +1,7 @@
-import { useForm, Controller, type SubmitHandler } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import type { Dayjs } from "dayjs";
 import {
   Input,
   DatePicker,
@@ -13,25 +14,49 @@ import {
 } from "antd";
 import { createUseStyles } from "react-jss";
 
+// EventStatus enum to match backend
+export type EventStatus =
+  | "DRAFT"
+  | "REGISTRATION_OPEN"
+  | "ONGOING"
+  | "COMPLETED";
+
 const eventSchema = z.object({
   title: z.string().min(1, "請輸入賽事名稱"),
   description: z.string().min(1, "請輸入賽事描述"),
-  eventDate: z.tuple([z.any(), z.any()]).optional(),
+  eventStartDate: z
+    .custom<Dayjs>()
+    .refine((val) => val !== null && val !== undefined, "請選擇賽事開始日期"),
+  eventEndDate: z
+    .custom<Dayjs>()
+    .refine((val) => val !== null && val !== undefined, "請選擇賽事結束日期"),
   registrationDeadline: z
-    .any()
-    .refine((val) => val !== null, "請選擇報名截止日期"),
-  status: z.string().min(1, "請選擇賽事狀態"),
+    .custom<Dayjs>()
+    .refine((val) => val !== null && val !== undefined, "請選擇報名截止日期"),
+  status: z.enum(["DRAFT", "REGISTRATION_OPEN", "ONGOING", "COMPLETED"], {
+    required_error: "請選擇賽事狀態",
+  }),
   maxSchools: z.number().min(1, "最大參賽學校數至少為1"),
   maxParticipants: z.number().min(1, "最大參賽人數至少為1"),
   location: z.string().min(1, "請輸入比賽地點"),
   contactPerson: z.string().min(1, "請輸入聯絡人"),
   contactPhone: z.string().min(1, "請輸入聯絡電話"),
   contactEmail: z.string().email("請輸入有效的電子郵件"),
+  createdBy: z.string().min(1, "請輸入創建者"),
 });
 
-type EventForm = z.infer<typeof eventSchema>;
+export type EventForm = z.infer<typeof eventSchema>;
 
-const useStyles = createUseStyles({
+type StyleClasses = {
+  form: string;
+  buttonContainer: string;
+  spaceContainer: string;
+  flexItem: string;
+  marginTop: string;
+  fullWidth: string;
+};
+
+const useStyles = createUseStyles<string, object, StyleClasses>({
   form: {
     marginTop: 24,
   },
@@ -56,6 +81,13 @@ const useStyles = createUseStyles({
   },
 });
 
+const STATUS_OPTIONS: Array<{ value: EventStatus; label: string }> = [
+  { value: "DRAFT", label: "籌備中" },
+  { value: "REGISTRATION_OPEN", label: "報名中" },
+  { value: "ONGOING", label: "進行中" },
+  { value: "COMPLETED", label: "已結束" },
+];
+
 const AddEventPage = () => {
   const classes = useStyles();
   const {
@@ -68,19 +100,21 @@ const AddEventPage = () => {
     defaultValues: {
       title: "",
       description: "",
-      eventDate: undefined,
-      registrationDeadline: null,
-      status: "籌備中",
+      eventStartDate: undefined,
+      eventEndDate: undefined,
+      registrationDeadline: undefined,
+      status: "DRAFT",
       maxSchools: 20,
       maxParticipants: 400,
       location: "",
       contactPerson: "",
       contactPhone: "",
       contactEmail: "",
+      createdBy: "",
     },
   });
 
-  const onSubmit: SubmitHandler<EventForm> = async (data) => {
+  const onSubmit = async (data: EventForm) => {
     try {
       console.log("提交的數據:", data);
       notification.success({
@@ -107,7 +141,7 @@ const AddEventPage = () => {
         <Form.Item
           label="賽事名稱"
           validateStatus={errors.title ? "error" : ""}
-          help={errors.title?.message || undefined}
+          help={errors.title?.message}
         >
           <Controller
             name="title"
@@ -122,7 +156,7 @@ const AddEventPage = () => {
         <Form.Item
           label="賽事描述"
           validateStatus={errors.description ? "error" : ""}
-          help={errors.description?.message || undefined}
+          help={errors.description?.message}
         >
           <Controller
             name="description"
@@ -130,7 +164,7 @@ const AddEventPage = () => {
             render={({ field }) => (
               <Input.TextArea
                 {...field}
-                placeholder="請輸入賽事描述（選填）"
+                placeholder="請輸入賽事描述"
                 rows={4}
                 size="large"
               />
@@ -138,36 +172,57 @@ const AddEventPage = () => {
           />
         </Form.Item>
 
-        {/* 賽事日期 */}
-        <Form.Item
-          label="賽事日期"
-          validateStatus={errors.eventDate ? "error" : ""}
-          help={errors.eventDate?.message || undefined}
-        >
-          <Controller
-            name="eventDate"
-            control={control}
-            render={({ field }) => (
-              <DatePicker.RangePicker
-                {...field}
-                placeholder={["開始日期", "結束日期"]}
-                className={classes.fullWidth}
-                size="large"
-                format="YYYY-MM-DD"
-              />
-            )}
-          />
-        </Form.Item>
+        {/* 賽事開始日期 & 結束日期 */}
+        <Space className={classes.spaceContainer} size="large">
+          <Form.Item
+            label="賽事開始日期"
+            validateStatus={errors.eventStartDate ? "error" : ""}
+            help={errors.eventStartDate?.message}
+            className={classes.flexItem}
+          >
+            <Controller
+              name="eventStartDate"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  {...field}
+                  placeholder="請選擇開始日期"
+                  className={classes.fullWidth}
+                  size="large"
+                  format="YYYY-MM-DD"
+                />
+              )}
+            />
+          </Form.Item>
+
+          <Form.Item
+            label="賽事結束日期"
+            validateStatus={errors.eventEndDate ? "error" : ""}
+            help={errors.eventEndDate?.message}
+            className={classes.flexItem}
+          >
+            <Controller
+              name="eventEndDate"
+              control={control}
+              render={({ field }) => (
+                <DatePicker
+                  {...field}
+                  placeholder="請選擇結束日期"
+                  className={classes.fullWidth}
+                  size="large"
+                  format="YYYY-MM-DD"
+                />
+              )}
+            />
+          </Form.Item>
+        </Space>
 
         {/* 報名截止日期 */}
         <Form.Item
           label="報名截止日期"
           validateStatus={errors.registrationDeadline ? "error" : ""}
-          help={
-            typeof errors.registrationDeadline?.message === "string"
-              ? errors.registrationDeadline.message
-              : undefined
-          }
+          help={errors.registrationDeadline?.message}
+          className={classes.marginTop}
         >
           <Controller
             name="registrationDeadline"
@@ -175,7 +230,7 @@ const AddEventPage = () => {
             render={({ field }) => (
               <DatePicker
                 {...field}
-                placeholder="請選擇報名愰止日期"
+                placeholder="請選擇報名截止日期"
                 className={classes.fullWidth}
                 size="large"
                 format="YYYY-MM-DD"
@@ -188,22 +243,13 @@ const AddEventPage = () => {
         <Form.Item
           label="賽事狀態"
           validateStatus={errors.status ? "error" : ""}
-          help={errors.status?.message || undefined}
+          help={errors.status?.message}
         >
           <Controller
             name="status"
             control={control}
             render={({ field }) => (
-              <Select
-                {...field}
-                size="large"
-                options={[
-                  { value: "籌備中", label: "籌備中" },
-                  { value: "報名中", label: "報名中" },
-                  { value: "進行中", label: "進行中" },
-                  { value: "已結束", label: "已結束" },
-                ]}
-              />
+              <Select {...field} size="large" options={STATUS_OPTIONS} />
             )}
           />
         </Form.Item>
@@ -213,7 +259,7 @@ const AddEventPage = () => {
           <Form.Item
             label="最大參賽學校數"
             validateStatus={errors.maxSchools ? "error" : ""}
-            help={errors.maxSchools?.message || undefined}
+            help={errors.maxSchools?.message}
             className={classes.flexItem}
           >
             <Controller
@@ -233,7 +279,7 @@ const AddEventPage = () => {
           <Form.Item
             label="最大參賽人數"
             validateStatus={errors.maxParticipants ? "error" : ""}
-            help={errors.maxParticipants?.message || undefined}
+            help={errors.maxParticipants?.message}
             className={classes.flexItem}
           >
             <Controller
@@ -255,7 +301,7 @@ const AddEventPage = () => {
         <Form.Item
           label="比賽地點"
           validateStatus={errors.location ? "error" : ""}
-          help={errors.location?.message || undefined}
+          help={errors.location?.message}
           className={classes.marginTop}
         >
           <Controller
@@ -272,7 +318,7 @@ const AddEventPage = () => {
           <Form.Item
             label="聯絡人"
             validateStatus={errors.contactPerson ? "error" : ""}
-            help={errors.contactPerson?.message || undefined}
+            help={errors.contactPerson?.message}
             className={classes.flexItem}
           >
             <Controller
@@ -287,7 +333,7 @@ const AddEventPage = () => {
           <Form.Item
             label="聯絡電話"
             validateStatus={errors.contactPhone ? "error" : ""}
-            help={errors.contactPhone?.message || undefined}
+            help={errors.contactPhone?.message}
             className={classes.flexItem}
           >
             <Controller
@@ -304,7 +350,7 @@ const AddEventPage = () => {
         <Form.Item
           label="聯絡郵箱"
           validateStatus={errors.contactEmail ? "error" : ""}
-          help={errors.contactEmail?.message || undefined}
+          help={errors.contactEmail?.message}
           className={classes.marginTop}
         >
           <Controller
@@ -317,6 +363,21 @@ const AddEventPage = () => {
                 type="email"
                 size="large"
               />
+            )}
+          />
+        </Form.Item>
+
+        {/* 創建者 */}
+        <Form.Item
+          label="創建者"
+          validateStatus={errors.createdBy ? "error" : ""}
+          help={errors.createdBy?.message}
+        >
+          <Controller
+            name="createdBy"
+            control={control}
+            render={({ field }) => (
+              <Input {...field} placeholder="請輸入創建者" size="large" />
             )}
           />
         </Form.Item>
