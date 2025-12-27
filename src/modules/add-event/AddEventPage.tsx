@@ -13,6 +13,7 @@ import {
   notification,
 } from "antd";
 import { createUseStyles } from "react-jss";
+import { useCreateEvent } from "./hooks/useCreateEvent";
 
 // EventStatus enum to match backend
 export type EventStatus =
@@ -42,7 +43,8 @@ const eventSchema = z.object({
   contactPerson: z.string().min(1, "請輸入聯絡人"),
   contactPhone: z.string().min(1, "請輸入聯絡電話"),
   contactEmail: z.string().email("請輸入有效的電子郵件"),
-  createdBy: z.string().min(1, "請輸入創建者"),
+  rules: z.string().optional(),
+  prizes: z.string().optional(),
 });
 
 export type EventForm = z.infer<typeof eventSchema>;
@@ -90,6 +92,7 @@ const STATUS_OPTIONS: Array<{ value: EventStatus; label: string }> = [
 
 const AddEventPage = () => {
   const classes = useStyles();
+  const createEventMutation = useCreateEvent();
   const {
     control,
     handleSubmit,
@@ -110,22 +113,21 @@ const AddEventPage = () => {
       contactPerson: "",
       contactPhone: "",
       contactEmail: "",
-      createdBy: "",
+      rules: "",
+      prizes: "",
     },
   });
 
   const onSubmit = async (data: EventForm) => {
     try {
-      console.log("提交的數據:", data);
+      await createEventMutation.mutateAsync(data);
       notification.success({
         message: "創建成功",
         description: "賽事已成功創建",
       });
+      reset();
     } catch (error) {
-      notification.error({
-        message: "創建失敗",
-        description: "請稍後再試或聯絡管理員",
-      });
+      // Error handling is done by the API interceptor
       console.error(error);
     }
   };
@@ -186,10 +188,11 @@ const AddEventPage = () => {
               render={({ field }) => (
                 <DatePicker
                   {...field}
-                  placeholder="請選擇開始日期"
+                  placeholder="請選擇開始日期時間"
                   className={classes.fullWidth}
                   size="large"
-                  format="YYYY-MM-DD"
+                  showTime
+                  format="YYYY-MM-DD HH:mm"
                 />
               )}
             />
@@ -207,10 +210,11 @@ const AddEventPage = () => {
               render={({ field }) => (
                 <DatePicker
                   {...field}
-                  placeholder="請選擇結束日期"
+                  placeholder="請選擇結束日期時間"
                   className={classes.fullWidth}
                   size="large"
-                  format="YYYY-MM-DD"
+                  showTime
+                  format="YYYY-MM-DD HH:mm"
                 />
               )}
             />
@@ -230,10 +234,11 @@ const AddEventPage = () => {
             render={({ field }) => (
               <DatePicker
                 {...field}
-                placeholder="請選擇報名截止日期"
+                placeholder="請選擇報名截止日期時間"
                 className={classes.fullWidth}
                 size="large"
-                format="YYYY-MM-DD"
+                showTime
+                format="YYYY-MM-DD HH:mm"
               />
             )}
           />
@@ -367,17 +372,43 @@ const AddEventPage = () => {
           />
         </Form.Item>
 
-        {/* 創建者 */}
+        {/* 賽事規則 */}
         <Form.Item
-          label="創建者"
-          validateStatus={errors.createdBy ? "error" : ""}
-          help={errors.createdBy?.message}
+          label="賽事規則"
+          validateStatus={errors.rules ? "error" : ""}
+          help={errors.rules?.message}
+          className={classes.marginTop}
         >
           <Controller
-            name="createdBy"
+            name="rules"
             control={control}
             render={({ field }) => (
-              <Input {...field} placeholder="請輸入創建者" size="large" />
+              <Input.TextArea
+                {...field}
+                placeholder="請輸入賽事規則（選填）"
+                rows={4}
+                size="large"
+              />
+            )}
+          />
+        </Form.Item>
+
+        {/* 獎項資訊 */}
+        <Form.Item
+          label="獎項資訊"
+          validateStatus={errors.prizes ? "error" : ""}
+          help={errors.prizes?.message}
+        >
+          <Controller
+            name="prizes"
+            control={control}
+            render={({ field }) => (
+              <Input.TextArea
+                {...field}
+                placeholder="請輸入獎項資訊（選填）"
+                rows={4}
+                size="large"
+              />
             )}
           />
         </Form.Item>
@@ -393,6 +424,7 @@ const AddEventPage = () => {
           type="primary"
           onClick={handleSubmit(onSubmit)}
           size="large"
+          loading={createEventMutation.isPending}
         >
           創建賽事
         </Button>
