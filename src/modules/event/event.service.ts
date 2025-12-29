@@ -1,9 +1,10 @@
 import { apiClient } from "../../app/api/client";
 import type { AddEventDto } from "../add-event/add-event.type";
+import type { EventRole, GrantRoleRequest } from "./role.type";
 
 export interface EventSummary {
   createdAt: string;
-  id: string;
+  _id: string;
   title: string;
   status: EventStatus;
   registrationDeadline?: string | null;
@@ -35,4 +36,13 @@ export const eventListingApi = {
 export const addEventApi = {
   addEvent: (addEventDto: AddEventDto) =>
     apiClient.post<AddEventDto>("event/create-events", addEventDto),
+};
+
+export const eventRoleApi = {
+  getRoles: (eventId: string) =>
+    apiClient.get<EventRole[]>(`/events/${eventId}/manage/roles`),
+  grantRole: (eventId: string, request: GrantRoleRequest) =>
+    apiClient.post<EventRole>(`/events/${eventId}/manage/roles`, request),
+  removeRole: (eventId: string, roleId: string) =>
+    apiClient.delete(`/events/${eventId}/manage/roles/${roleId}`),
 };

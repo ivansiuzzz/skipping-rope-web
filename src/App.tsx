@@ -6,6 +6,7 @@ import { AppLayout } from "./app/components/AppLayout";
 import { HomePage } from "./modules/home/HomePage";
 import AddEventPage from "./modules/add-event/AddEventPage";
 import EventListingPage from "./modules/event/EventListingPage";
+import EventSummaryPage from "./modules/event/EventSummaryPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -49,6 +50,16 @@ function App() {
               <ProtectedRoute>
                 <AppLayout>
                   <EventListingPage />
+                </AppLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/events/:eventId/summary"
+            element={
+              <ProtectedRoute>
+                <AppLayout>
+                  <EventSummaryPage />
                 </AppLayout>
               </ProtectedRoute>
             }

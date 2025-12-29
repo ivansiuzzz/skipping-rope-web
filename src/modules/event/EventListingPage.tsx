@@ -176,7 +176,7 @@ const EventListingPage = () => {
 
             return (
               <Card
-                key={event.id}
+                key={event._id}
                 className={classes.eventCard}
                 variant={"outlined"}
               >
@@ -242,7 +242,11 @@ const EventListingPage = () => {
 
                 <div className={classes.cardActions}>
                   <Button className={classes.detailButton}>查看詳情</Button>
-                  <Button type="primary" className={classes.manageButton}>
+                  <Button
+                    type="primary"
+                    className={classes.manageButton}
+                    onClick={() => navigate(`/events/${event._id}/summary`)}
+                  >
                     管理賽事
                   </Button>
                 </div>
