@@ -37,7 +37,7 @@ const EventSummaryPage = () => {
     {
       key: "chat",
       label: "聊天室",
-      children: <ChatRoom eventId={eventId} />,
+      children: <ChatRoom key={eventId} eventId={eventId} />,
     },
     {
       key: "roles",

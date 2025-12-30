@@ -104,21 +104,17 @@ export const ChatRoom = ({ eventId }: ChatRoomProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const historyReceivedRef = useRef(false);
 
+  // Connect to socket and join room
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) {
       notificationService.error("錯誤", "請先登入");
-      setIsLoading(false);
-      return;
+      // Use setTimeout to avoid synchronous setState in effect
+      const timeoutId = setTimeout(() => setIsLoading(false), 0);
+      return () => clearTimeout(timeoutId);
     }
-
-    // Reset state when eventId changes
-    setMessages([]);
-    setIsLoading(true);
-    setIsConnected(false);
-
-    let historyReceived = false;
 
     // Connect to socket
     chatSocketService.connect(token);
@@ -129,9 +125,9 @@ export const ChatRoom = ({ eventId }: ChatRoomProps) => {
       setIsConnected(connected);
     }, 500);
 
-    // Timeout for loading - if no message-history received after 3 seconds of connection
+    // Timeout for loading - if no message-history received after 5 seconds
     const loadingTimeout = setTimeout(() => {
-      if (!historyReceived) {
+      if (!historyReceivedRef.current) {
         console.log("Chat: Loading timeout, no message-history received");
         setIsLoading(false);
       }
@@ -142,7 +138,7 @@ export const ChatRoom = ({ eventId }: ChatRoomProps) => {
       eventId,
       (data: MessageHistory) => {
         console.log("Chat: Received message-history", data);
-        historyReceived = true;
+        historyReceivedRef.current = true;
         setMessages(data.messages || []);
         setIsLoading(false);
         setIsConnected(true);
