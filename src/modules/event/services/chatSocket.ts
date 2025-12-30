@@ -59,6 +59,13 @@ class ChatSocketService {
     console.log("Socket: Connecting to", `${baseUrl}/chat`);
     console.log("Socket: VITE_API_URL =", import.meta.env.VITE_API_URL);
 
+    // Log token info (without exposing full token)
+    console.log("Socket: Token info:", {
+      hasToken: !!token,
+      tokenLength: token?.length,
+      tokenPrefix: token?.substring(0, 20) + "...",
+    });
+
     this.socket = io(`${baseUrl}/chat`, {
       auth: {
         token,
@@ -99,6 +106,29 @@ class ChatSocketService {
             { eventId },
             (response: unknown) => {
               console.log("Socket: join-event-room acknowledgment:", response);
+              // Check if response indicates an error
+              if (response && typeof response === "object") {
+                const responseData = response as {
+                  status?: string;
+                  message?: string;
+                };
+                if (responseData.status === "error") {
+                  console.error(
+                    "Socket: join-event-room returned error:",
+                    responseData
+                  );
+                  if (responseData.message === "Unauthorized") {
+                    notificationService.error(
+                      "認證失敗",
+                      "請重新登入以繼續使用聊天功能"
+                    );
+                    setTimeout(() => {
+                      localStorage.removeItem("token");
+                      window.location.href = "/login";
+                    }, 2000);
+                  }
+                }
+              }
             }
           );
         }, 100);
@@ -122,13 +152,33 @@ class ChatSocketService {
         type: (error as Error & { type?: string }).type,
         context: (error as Error & { context?: unknown }).context,
       });
+
+      // Check if it's an authentication error
+      const isAuthError =
+        error.message?.includes("Unauthorized") ||
+        error.message?.includes("authentication") ||
+        (error as Error & { data?: unknown }).data === "Unauthorized";
+
       // Only show error notification if it's not a reconnection attempt
       if (!this.socket?.active) {
-        notificationService.error("連線失敗", "無法連接到聊天室，請稍後再試");
+        if (isAuthError) {
+          notificationService.error("認證失敗", "請重新登入以繼續使用聊天功能");
+          setTimeout(() => {
+            localStorage.removeItem("token");
+            window.location.href = "/login";
+          }, 2000);
+        } else {
+          notificationService.error("連線失敗", "無法連接到聊天室，請稍後再試");
+        }
       }
+
       // Clear pending callbacks on connection error
       if (this.pendingJoinCallbacks) {
-        this.pendingJoinCallbacks.onError({ message: "連接失敗，請稍後再試" });
+        this.pendingJoinCallbacks.onError({
+          message: isAuthError
+            ? "認證失敗，請重新登入"
+            : "連接失敗，請稍後再試",
+        });
         this.pendingJoinCallbacks = null;
       }
     });
@@ -193,6 +243,26 @@ class ChatSocketService {
     console.log("Socket: Emitting join-event-room with eventId:", eventId);
     this.socket.emit("join-event-room", { eventId }, (response: unknown) => {
       console.log("Socket: join-event-room acknowledgment:", response);
+      // Check if response indicates an error
+      if (response && typeof response === "object") {
+        const responseData = response as { status?: string; message?: string };
+        if (responseData.status === "error") {
+          console.error(
+            "Socket: join-event-room returned error:",
+            responseData
+          );
+          if (responseData.message === "Unauthorized") {
+            notificationService.error(
+              "認證失敗",
+              "請重新登入以繼續使用聊天功能"
+            );
+            setTimeout(() => {
+              localStorage.removeItem("token");
+              window.location.href = "/login";
+            }, 2000);
+          }
+        }
+      }
     });
   }
 
@@ -237,22 +307,45 @@ class ChatSocketService {
       onError(data);
     });
     // Handle exception events (used by some socket.io setups for errors)
+    // Note: NestJS WsException is converted to exception event
     this.socket.on("exception", (data: unknown) => {
       console.error("Socket: exception event received", data);
-      const errorData = data as { status?: string; message?: string };
-      if (errorData.status === "error" && errorData.message) {
-        if (errorData.message === "Unauthorized") {
+
+      // NestJS WsException format: { status: "error", message: "..." }
+      // Could also be just a string: "Unauthorized"
+      let errorMessage: string | undefined;
+      let shouldLogout = false;
+
+      if (typeof data === "string") {
+        errorMessage = data;
+        shouldLogout = data === "Unauthorized";
+      } else if (typeof data === "object" && data !== null) {
+        const errorData = data as { status?: string; message?: string };
+        errorMessage = errorData.message;
+        // Only logout if it's explicitly an Unauthorized error
+        shouldLogout =
+          errorData.message === "Unauthorized" ||
+          (errorData.status === "error" &&
+            errorData.message === "Unauthorized");
+      }
+
+      if (errorMessage) {
+        console.error("Socket: Error message:", errorMessage);
+        if (shouldLogout) {
+          console.error("Socket: Unauthorized error detected, will logout");
           notificationService.error("認證失敗", "請重新登入以繼續使用聊天功能");
-          // Optionally redirect to login
+          // Delay logout to allow user to see the message
           setTimeout(() => {
             localStorage.removeItem("token");
             window.location.href = "/login";
           }, 2000);
         } else {
-          notificationService.error("錯誤", errorData.message);
+          // For other errors, just show notification but don't logout
+          notificationService.error("錯誤", errorMessage);
         }
-        onError({ message: errorData.message });
+        onError({ message: errorMessage });
       } else {
+        console.error("Socket: Unknown error format:", data);
         onError({ message: "發生未知錯誤" });
       }
     });
@@ -304,26 +397,34 @@ class ChatSocketService {
       (response: unknown) => {
         console.log("Socket: send-message acknowledgment:", response);
         // Handle error response from server
-        const responseData = response as
-          | { status?: string; message?: string }
-          | null
-          | undefined;
-        if (responseData?.status === "error") {
-          console.error("Socket: Server returned error:", responseData);
-          if (responseData.message === "Unauthorized") {
-            notificationService.error(
-              "認證失敗",
-              "請重新登入以繼續使用聊天功能"
+        // Note: NestJS typically uses exception events, not acknowledgment errors
+        // But we check here just in case
+        if (response && typeof response === "object") {
+          const responseData = response as {
+            status?: string;
+            message?: string;
+          };
+          if (responseData.status === "error") {
+            console.error(
+              "Socket: Server returned error in acknowledgment:",
+              responseData
             );
-            setTimeout(() => {
-              localStorage.removeItem("token");
-              window.location.href = "/login";
-            }, 2000);
-          } else {
-            notificationService.error(
-              "發送失敗",
-              responseData.message || "無法發送訊息"
-            );
+            // Only logout for Unauthorized errors
+            if (responseData.message === "Unauthorized") {
+              notificationService.error(
+                "認證失敗",
+                "請重新登入以繼續使用聊天功能"
+              );
+              setTimeout(() => {
+                localStorage.removeItem("token");
+                window.location.href = "/login";
+              }, 2000);
+            } else {
+              notificationService.error(
+                "發送失敗",
+                responseData.message || "無法發送訊息"
+              );
+            }
           }
         }
       }
