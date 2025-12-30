@@ -7,11 +7,12 @@ import {
   UserOutlined,
   LockOutlined,
   TrophyFilled,
+  MailOutlined,
 } from "@ant-design/icons";
 import { createUseStyles } from "react-jss";
 import { Link } from "react-router-dom";
-import { loginSchema, type LoginFormData } from "./schemas/login.schema";
-import { useLogin } from "./hooks/useLogin";
+import { registerSchema, type RegisterFormData } from "./schemas/register.schema";
+import { useRegister } from "./hooks/useRegister";
 
 const { Title, Text } = Typography;
 
@@ -150,7 +151,7 @@ const useStyles = createUseStyles({
       transform: "translateY(0)",
     },
   },
-  registerLink: {
+  loginLink: {
     textAlign: "center",
     marginTop: "24px",
     color: "#8c8c8c",
@@ -165,22 +166,22 @@ const useStyles = createUseStyles({
   },
 });
 
-export const LoginPage = () => {
+export const RegisterPage = () => {
   const classes = useStyles();
-  const loginMutation = useLogin();
+  const registerMutation = useRegister();
 
   const {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
     mode: "onSubmit",
     reValidateMode: "onSubmit",
   });
 
-  const onSubmit = (data: LoginFormData) => {
-    loginMutation.mutate(data);
+  const onSubmit = (data: RegisterFormData) => {
+    registerMutation.mutate(data);
   };
 
   return (
@@ -193,10 +194,31 @@ export const LoginPage = () => {
           <Title level={2} className={classes.title}>
             跳繩競賽系統
           </Title>
-          <Text className={classes.subtitle}>歡迎回來，請登入您的帳號</Text>
+          <Text className={classes.subtitle}>建立您的帳號</Text>
         </div>
 
         <Form onFinish={handleSubmit(onSubmit)} layout="vertical" size="large">
+          <Form.Item
+            label="Name"
+            validateStatus={errors.name ? "error" : ""}
+            help={errors.name?.message}
+            className={classes.formItem}
+          >
+            <Controller
+              name="name"
+              control={control}
+              render={({ field }) => (
+                <Input
+                  {...field}
+                  prefix={<UserOutlined style={{ color: "#bfbfbf" }} />}
+                  placeholder="Enter your name"
+                  status={errors.name ? "error" : ""}
+                  className={classes.input}
+                />
+              )}
+            />
+          </Form.Item>
+
           <Form.Item
             label="Email"
             validateStatus={errors.email ? "error" : ""}
@@ -209,7 +231,7 @@ export const LoginPage = () => {
               render={({ field }) => (
                 <Input
                   {...field}
-                  prefix={<UserOutlined style={{ color: "#bfbfbf" }} />}
+                  prefix={<MailOutlined style={{ color: "#bfbfbf" }} />}
                   placeholder="Enter your email"
                   type="email"
                   status={errors.email ? "error" : ""}
@@ -232,7 +254,7 @@ export const LoginPage = () => {
                 <Input.Password
                   {...field}
                   prefix={<LockOutlined style={{ color: "#bfbfbf" }} />}
-                  placeholder="Enter your password"
+                  placeholder="Create a password"
                   iconRender={(visible) =>
                     visible ? <EyeTwoTone /> : <EyeInvisibleOutlined />
                   }
@@ -248,19 +270,20 @@ export const LoginPage = () => {
               type="primary"
               htmlType="submit"
               block
-              loading={loginMutation.isPending}
+              loading={registerMutation.isPending}
               className={classes.submitButton}
             >
-              {loginMutation.isPending ? "Logging in..." : "Login"}
+              {registerMutation.isPending ? "Creating Account..." : "Register"}
             </Button>
           </Form.Item>
 
-          <div className={classes.registerLink}>
-            Don't have an account?
-            <Link to="/register">Register now</Link>
+          <div className={classes.loginLink}>
+            Already have an account?
+            <Link to="/login">Login now</Link>
           </div>
         </Form>
       </Card>
     </div>
   );
 };
+
