@@ -20,9 +20,30 @@ class ChatSocketService {
   private socket: Socket | null = null;
   private isConnected = false;
   private currentEventId: string | null = null;
+  private pendingJoinCallbacks: {
+    eventId: string;
+    onMessageHistory: (data: MessageHistory) => void;
+    onNewMessage: (message: ChatMessage) => void;
+    onError: (error: { message: string }) => void;
+  } | null = null;
 
   connect(token: string): void {
     if (this.socket?.connected) {
+      console.log("Socket: Already connected, skipping connect");
+      // If there's a pending join, execute it now
+      if (this.pendingJoinCallbacks) {
+        const { eventId, onMessageHistory, onNewMessage, onError } =
+          this.pendingJoinCallbacks;
+        this.pendingJoinCallbacks = null;
+        this.setupEventListeners(
+          eventId,
+          onMessageHistory,
+          onNewMessage,
+          onError
+        );
+        console.log("Socket: Emitting join-event-room with eventId:", eventId);
+        this.socket.emit("join-event-room", { eventId });
+      }
       return;
     }
 
@@ -54,7 +75,34 @@ class ChatSocketService {
 
     this.socket.on("connect", () => {
       this.isConnected = true;
-      console.log("Chat socket connected");
+      console.log("Chat socket connected, socket.id:", this.socket?.id);
+
+      // If there's a pending join, execute it now
+      if (this.pendingJoinCallbacks) {
+        const { eventId, onMessageHistory, onNewMessage, onError } =
+          this.pendingJoinCallbacks;
+        this.pendingJoinCallbacks = null;
+        // Small delay to ensure connection is fully established
+        setTimeout(() => {
+          this.setupEventListeners(
+            eventId,
+            onMessageHistory,
+            onNewMessage,
+            onError
+          );
+          console.log(
+            "Socket: Emitting join-event-room with eventId:",
+            eventId
+          );
+          this.socket?.emit(
+            "join-event-room",
+            { eventId },
+            (response: unknown) => {
+              console.log("Socket: join-event-room acknowledgment:", response);
+            }
+          );
+        }, 100);
+      }
     });
 
     this.socket.on("disconnect", (reason) => {
@@ -78,6 +126,11 @@ class ChatSocketService {
       if (!this.socket?.active) {
         notificationService.error("連線失敗", "無法連接到聊天室，請稍後再試");
       }
+      // Clear pending callbacks on connection error
+      if (this.pendingJoinCallbacks) {
+        this.pendingJoinCallbacks.onError({ message: "連接失敗，請稍後再試" });
+        this.pendingJoinCallbacks = null;
+      }
     });
   }
 
@@ -97,7 +150,7 @@ class ChatSocketService {
     onError: (error: { message: string }) => void
   ): void {
     // Skip if already in this room
-    if (this.currentEventId === eventId) {
+    if (this.currentEventId === eventId && this.isConnected) {
       console.log("Socket: Already in room", eventId);
       return;
     }
@@ -110,45 +163,37 @@ class ChatSocketService {
     if (!this.socket || !this.isConnected) {
       const token = localStorage.getItem("token");
       if (token) {
+        // Store callbacks to execute after connection
+        this.pendingJoinCallbacks = {
+          eventId,
+          onMessageHistory,
+          onNewMessage,
+          onError,
+        };
         this.connect(token);
-        // Wait for connection before joining
-        console.log("Socket: Waiting for connection...");
-        let joined = false;
-        const checkConnection = setInterval(() => {
-          if (this.isConnected && !joined) {
-            joined = true;
-            clearInterval(checkConnection);
-            console.log("Socket: Connected, now joining room...");
-            this.setupEventListeners(
-              eventId,
-              onMessageHistory,
-              onNewMessage,
-              onError
-            );
-            console.log(
-              "Socket: Emitting join-event-room with eventId:",
-              eventId
-            );
-            this.socket?.emit("join-event-room", { eventId });
-          }
-        }, 100);
 
-        // Timeout after 5 seconds
+        // Set timeout for connection
         setTimeout(() => {
-          clearInterval(checkConnection);
-          if (!this.isConnected) {
-            onError({ message: "連接超時，請稍後再試" });
+          if (!this.isConnected && this.pendingJoinCallbacks) {
+            console.error("Socket: Connection timeout");
+            this.pendingJoinCallbacks.onError({
+              message: "連接超時，請稍後再試",
+            });
+            this.pendingJoinCallbacks = null;
           }
-        }, 5000);
+        }, 10000);
       } else {
         onError({ message: "請先登入" });
       }
       return;
     }
 
+    // Socket is already connected, set up listeners and join immediately
     this.setupEventListeners(eventId, onMessageHistory, onNewMessage, onError);
     console.log("Socket: Emitting join-event-room with eventId:", eventId);
-    this.socket.emit("join-event-room", { eventId });
+    this.socket.emit("join-event-room", { eventId }, (response: unknown) => {
+      console.log("Socket: join-event-room acknowledgment:", response);
+    });
   }
 
   private setupEventListeners(
@@ -157,7 +202,10 @@ class ChatSocketService {
     onNewMessage: (message: ChatMessage) => void,
     onError: (error: { message: string }) => void
   ): void {
-    if (!this.socket) return;
+    if (!this.socket) {
+      console.error("Socket: Cannot setup listeners - socket is null");
+      return;
+    }
 
     this.currentEventId = eventId;
 
@@ -168,19 +216,34 @@ class ChatSocketService {
 
     // Set up event listeners with debug logging
     this.socket.on("message-history", (data) => {
-      console.log("Socket: message-history event received", data);
+      console.log("Socket: message-history event received", {
+        eventId: data?.eventId,
+        messageCount: data?.messages?.length || 0,
+        data,
+      });
       onMessageHistory(data);
     });
     this.socket.on("new-message", (data) => {
-      console.log("Socket: new-message event received", data);
+      console.log("Socket: new-message event received", {
+        eventId: data?.eventId,
+        messageId: data?.id,
+        data,
+      });
       onNewMessage(data);
     });
     this.socket.on("error", (data) => {
-      console.log("Socket: error event received", data);
+      console.error("Socket: error event received", data);
       onError(data);
     });
 
+    // Listen for all events for debugging
+    this.socket.onAny((eventName, ...args) => {
+      console.log(`Socket: Received event '${eventName}'`, args);
+    });
+
     console.log("Socket: Event listeners set up for eventId:", eventId);
+    console.log("Socket: Socket connected:", this.socket.connected);
+    console.log("Socket: Socket ID:", this.socket.id);
   }
 
   leaveEventRoom(): void {
@@ -199,6 +262,8 @@ class ChatSocketService {
       message,
       isConnected: this.isConnected,
       hasSocket: !!this.socket,
+      socketConnected: this.socket?.connected,
+      socketId: this.socket?.id,
     });
 
     if (!this.socket || !this.isConnected) {
@@ -208,10 +273,16 @@ class ChatSocketService {
     }
 
     console.log("Socket: Emitting send-message event");
-    this.socket.emit("send-message", {
-      eventId,
-      message,
-    });
+    this.socket.emit(
+      "send-message",
+      {
+        eventId,
+        message,
+      },
+      (response: unknown) => {
+        console.log("Socket: send-message acknowledgment:", response);
+      }
+    );
   }
 
   getIsConnected(): boolean {
