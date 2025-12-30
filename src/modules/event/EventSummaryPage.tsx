@@ -4,6 +4,7 @@ import { createUseStyles } from "react-jss";
 import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "../../app/components/Header/Header";
 import { EventAccessRights } from "./components/EventAccessRights";
+import { EventCalendar } from "./components/EventCalendar";
 
 const useStyles = createUseStyles({
   pageContainer: {
@@ -28,11 +29,15 @@ const EventSummaryPage = () => {
 
   const tabItems = [
     {
+      key: "calendar",
+      label: "行程管理",
+      children: <EventCalendar eventId={eventId} />,
+    },
+    {
       key: "roles",
       label: "管理角色",
       children: <EventAccessRights eventId={eventId} />,
     },
-    // 可以在這裡添加更多 tabs
   ];
 
   return (
@@ -57,4 +62,3 @@ const EventSummaryPage = () => {
 };
 
 export default EventSummaryPage;
-
