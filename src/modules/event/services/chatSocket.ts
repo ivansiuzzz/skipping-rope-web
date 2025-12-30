@@ -213,6 +213,7 @@ class ChatSocketService {
     this.socket.off("message-history");
     this.socket.off("new-message");
     this.socket.off("error");
+    this.socket.off("exception");
 
     // Set up event listeners with debug logging
     this.socket.on("message-history", (data) => {
@@ -235,6 +236,26 @@ class ChatSocketService {
       console.error("Socket: error event received", data);
       onError(data);
     });
+    // Handle exception events (used by some socket.io setups for errors)
+    this.socket.on("exception", (data: unknown) => {
+      console.error("Socket: exception event received", data);
+      const errorData = data as { status?: string; message?: string };
+      if (errorData.status === "error" && errorData.message) {
+        if (errorData.message === "Unauthorized") {
+          notificationService.error("認證失敗", "請重新登入以繼續使用聊天功能");
+          // Optionally redirect to login
+          setTimeout(() => {
+            localStorage.removeItem("token");
+            window.location.href = "/login";
+          }, 2000);
+        } else {
+          notificationService.error("錯誤", errorData.message);
+        }
+        onError({ message: errorData.message });
+      } else {
+        onError({ message: "發生未知錯誤" });
+      }
+    });
 
     // Listen for all events for debugging
     this.socket.onAny((eventName, ...args) => {
@@ -252,6 +273,7 @@ class ChatSocketService {
       this.socket.off("message-history");
       this.socket.off("new-message");
       this.socket.off("error");
+      this.socket.off("exception");
       this.currentEventId = null;
     }
   }
@@ -281,6 +303,29 @@ class ChatSocketService {
       },
       (response: unknown) => {
         console.log("Socket: send-message acknowledgment:", response);
+        // Handle error response from server
+        const responseData = response as
+          | { status?: string; message?: string }
+          | null
+          | undefined;
+        if (responseData?.status === "error") {
+          console.error("Socket: Server returned error:", responseData);
+          if (responseData.message === "Unauthorized") {
+            notificationService.error(
+              "認證失敗",
+              "請重新登入以繼續使用聊天功能"
+            );
+            setTimeout(() => {
+              localStorage.removeItem("token");
+              window.location.href = "/login";
+            }, 2000);
+          } else {
+            notificationService.error(
+              "發送失敗",
+              responseData.message || "無法發送訊息"
+            );
+          }
+        }
       }
     );
   }
