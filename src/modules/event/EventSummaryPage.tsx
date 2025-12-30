@@ -6,6 +6,7 @@ import { Header } from "../../app/components/Header/Header";
 import { EventAccessRights } from "./components/EventAccessRights";
 import { EventCalendar } from "./components/EventCalendar";
 import { ChatRoom } from "./components/ChatRoom";
+import { EventAttachments } from "./components/EventAttachments";
 
 const useStyles = createUseStyles({
   pageContainer: {
@@ -33,6 +34,11 @@ const EventSummaryPage = () => {
       key: "calendar",
       label: "行程管理",
       children: <EventCalendar eventId={eventId} />,
+    },
+    {
+      key: "attachments",
+      label: "附件",
+      children: <EventAttachments eventId={eventId} />,
     },
     {
       key: "chat",
