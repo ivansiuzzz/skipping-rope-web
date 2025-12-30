@@ -35,15 +35,21 @@ class ChatSocketService {
     // Remove trailing slash and ensure proper URL format
     const baseUrl = apiUrl.replace(/\/$/, "");
 
+    console.log("Socket: Connecting to", `${baseUrl}/chat`);
+    console.log("Socket: VITE_API_URL =", import.meta.env.VITE_API_URL);
+
     this.socket = io(`${baseUrl}/chat`, {
       auth: {
         token,
       },
+      // Let socket.io choose the best transport
       transports: ["websocket", "polling"],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionAttempts: 5,
       reconnectionDelayMax: 5000,
+      // Important for cross-origin connections
+      withCredentials: true,
     });
 
     this.socket.on("connect", () => {
@@ -62,6 +68,12 @@ class ChatSocketService {
 
     this.socket.on("connect_error", (error) => {
       console.error("Chat socket connection error:", error);
+      console.error("Socket: Connection error details:", {
+        message: error.message,
+        description: (error as Error & { description?: string }).description,
+        type: (error as Error & { type?: string }).type,
+        context: (error as Error & { context?: unknown }).context,
+      });
       // Only show error notification if it's not a reconnection attempt
       if (!this.socket?.active) {
         notificationService.error("連線失敗", "無法連接到聊天室，請稍後再試");
