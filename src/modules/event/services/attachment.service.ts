@@ -1,11 +1,13 @@
 import { apiClient } from "../../../app/api/client";
 
-export enum AttachmentType {
-  IMAGE = "image",
-  VIDEO = "video",
-  DOCUMENT = "document",
-  OTHER = "other",
-}
+export const AttachmentType = {
+  IMAGE: "image",
+  VIDEO: "video",
+  DOCUMENT: "document",
+  OTHER: "other",
+} as const;
+
+export type AttachmentType = (typeof AttachmentType)[keyof typeof AttachmentType];
 
 export interface Attachment {
   id: string;

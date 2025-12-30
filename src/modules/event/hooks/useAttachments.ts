@@ -1,14 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   attachmentApi,
-  type Attachment,
   type GetAttachmentsQuery,
   type GetAttachmentsResponse,
 } from "../services/attachment.service";
 import { notificationService } from "../../../app/components/Notification/notificationService";
 
 // 獲取附件列表
-export const useAttachments = (eventId: string, query?: GetAttachmentsQuery) => {
+export const useAttachments = (
+  eventId: string,
+  query?: GetAttachmentsQuery
+) => {
   return useQuery<GetAttachmentsResponse, Error>({
     queryKey: ["attachments", eventId, query],
     queryFn: async () => {
@@ -61,4 +63,3 @@ export const useDeleteAttachment = (eventId: string) => {
     },
   });
 };
-
