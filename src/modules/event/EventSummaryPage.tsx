@@ -5,6 +5,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Header } from "../../app/components/Header/Header";
 import { EventAccessRights } from "./components/EventAccessRights";
 import { EventCalendar } from "./components/EventCalendar";
+import { ChatRoom } from "./components/ChatRoom";
 
 const useStyles = createUseStyles({
   pageContainer: {
@@ -32,6 +33,11 @@ const EventSummaryPage = () => {
       key: "calendar",
       label: "行程管理",
       children: <EventCalendar eventId={eventId} />,
+    },
+    {
+      key: "chat",
+      label: "聊天室",
+      children: <ChatRoom eventId={eventId} />,
     },
     {
       key: "roles",
